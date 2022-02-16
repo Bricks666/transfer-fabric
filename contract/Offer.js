@@ -41,7 +41,7 @@ class OfferList {
 		//login - кто голосует
 		const ListOffers = await this.ctx.stub.getState(this.KEY);
 		const offers = JSON.parse(ListOffers.toString());
-		offers[offerId].voteAgainst = login;
+		offers[offerId].VoteAgainst = login;
 		const DataOffers = Buffer.from(JSON.stringify(offers));
 		await this.ctx.stub.putState(this.KEY, DataOffers);
 	}
@@ -79,6 +79,7 @@ class OffersContract extends Contract {
 	async initializationContract(ctx) {
 		const offers = [];
 		await ctx.offerList.createOffers(offers);
+		return offers;
 	}
 	async addOffer(ctx, login, loginToOffer) {
 		//login - логин админа, который добавляет. loginToOffer - логин пользователя, которого добавляют
@@ -93,7 +94,7 @@ class OffersContract extends Contract {
 		const offer = new Offer(offers.length, loginToOffer);
 		await ctx.userList.addOffer(loginToOffer);
 		await ctx.offerList.addOffer(offer);
-		return await ctx.offerList.getOffer(offers.length);
+		return offer;
 	}
 	async voteFor(ctx, login, offerId) {
 		// login - кто голосует
@@ -105,19 +106,19 @@ class OffersContract extends Contract {
 		if (offers[offerId].finished === true) {
 			return new Error("The offer is finished");
 		}
-		for (let i = 0; i < offers[offerId].listVoteFor.length; i++) {
-			if (offers[offerId].listVoteFor[i] === login) {
-				return new Error("You are already vote");
-			}
+    if (offers[offerId].listVoteFor.includes(login)) {
+			return new Error("You are already vote");
 		}
-		const countAdmin = users.filter((user) => user.isAdmin).length;
+		const countAdmin = Object.values(users).filter(
+			(user) => user.isAdmin
+		).length;
 		await ctx.offerList.voteFor(offerId, login);
 		const offer = await ctx.offerList.getOffer(offerId);
-		if (countAdmin === Object.keys(offer[offerId].listVoteFor).length) {
+		if (countAdmin === offer.listVoteFor.length) {
 			await ctx.offerList.finishOffer(offerId);
-			await ctx.userList.addAdmin(offer[offerId].loginToOffer);
+			await ctx.userList.addAdmin(offer.loginToOffer);
 		}
-		return await ctx.offerList.getOffer(offerId);
+		return offer;
 	}
 	async voteAgainst(ctx, login, offerId) {
 		// login - кто голосует
@@ -126,18 +127,16 @@ class OffersContract extends Contract {
 		if (users[login].isAdmin === false) {
 			return new Error("You are not admin");
 		}
-		for (let i = 0; i < offers[offerId].listVoteFor.length; i++) {
-			if (offers[offerId].listVoteFor[i] === login) {
-				return new Error("You are already vote");
-			}
+		if (offers[offerId].listVoteFor.includes(login)) {
+			return new Error("You are already vote");
 		}
 		if (offers[offerId].finished === true) {
 			return new Error("The offer is finished");
 		}
-		await ctx.offerId.voteAgainst(offerId, login);
+		await ctx.offerList.voteAgainst(offerId, login);
 		await ctx.userList.removeOffer(offers[offerId].loginToOffer);
 		await ctx.offerList.finishOffer(offerId);
-		return await ctx.offerList.getOffer(offerId);
+		return offers[offerId];
 	}
 	async getOffers(ctx) {
 		return await ctx.offerList.getOffers();

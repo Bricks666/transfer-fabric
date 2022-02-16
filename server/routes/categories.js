@@ -1,15 +1,15 @@
 const { Router } = require("express");
 const { accessVerify, adminVerify } = require("../middlewares");
-const { CategoriesServices } = require("../services");
+const { CategoriesControllers } = require("../controllers");
 
 const categoriesRouter = Router();
 
-categoriesRouter.get("/", accessVerify, CategoriesServices.getCategories);
+categoriesRouter.get("/", accessVerify, CategoriesControllers.getCategories);
 categoriesRouter.put(
 	"/add",
 	accessVerify,
 	adminVerify,
-	CategoriesServices.addCategory
+	CategoriesControllers.addCategory
 );
 
 module.exports = categoriesRouter;

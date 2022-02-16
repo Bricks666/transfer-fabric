@@ -15,20 +15,20 @@ class SampleList {
 	}
 	async addSample(sample) {
 		const SamplesList = await this.ctx.stub.getState(this.KEY);
-		const samples = JSON.parse(SamplesList);
-		samples.push(sample);
+		const samples = JSON.parse(SamplesList.toString());
+		samples[sample.name] = sample;
 		const DataSamples = Buffer.from(JSON.stringify(samples));
 		await this.ctx.stub.putState(this.KEY, DataSamples);
 	}
 	async getSamples() {
 		const SamplesList = await this.ctx.stub.getState(this.KEY);
-		const samples = JSON.parse(SamplesList);
+		const samples = JSON.parse(SamplesList.toString());
 		return samples;
 	}
-	async getSample(sampleId) {
+	async getSample(sampleName) {
 		const SamplesList = await this.ctx.stub.getState(this.KEY);
-		const samples = JSON.parse(SamplesList);
-		return samples[sampleId];
+		const samples = JSON.parse(SamplesList.toString());
+		return samples[sampleName];
 	}
 }
 
@@ -62,6 +62,7 @@ class SamplesContract extends Contract {
 		samples["RentPay70"] = new Sample(3, "RentPay70", 1, 70);
 		samples["RentPay90"] = new Sample(4, "RentPay90", 1, 90);
 		await ctx.sampleList.createSamples(samples);
+		return samples;
 	}
 	async addSample(ctx, login, nameSample, categoryId, money) {
 		const users = await ctx.userList.getUsers();
@@ -71,7 +72,7 @@ class SamplesContract extends Contract {
 		const samples = await ctx.sampleList.getSamples();
 		const sample = new Sample(samples.length, nameSample, categoryId, money);
 		await ctx.sampleList.addSample(sample);
-		return await ctx.sampleList.getSample(samples.length);
+		return sample;
 	}
 	async getSamples(ctx) {
 		return await ctx.sampleList.getSamples();

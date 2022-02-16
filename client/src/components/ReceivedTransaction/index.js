@@ -1,0 +1,1 @@
+export { ReceivedTransaction } from "./ReceivedTransaction";

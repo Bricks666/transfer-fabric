@@ -4,9 +4,14 @@ const { accessVerify } = require("../middlewares");
 
 const transactionsRouter = Router();
 transactionsRouter.get(
-	"/",
+	"/sended",
 	accessVerify,
-	TransactionsControllers.getTransactions
+	TransactionsControllers.getSendedTransactions
+);
+transactionsRouter.get(
+	"/received",
+	accessVerify,
+	TransactionsControllers.getReceivedTransactions
 );
 transactionsRouter.put(
 	"/add",
@@ -14,13 +19,13 @@ transactionsRouter.put(
 	TransactionsControllers.addTransaction
 );
 transactionsRouter.post(
-	"/accept",
+	"/:id/accept",
 	accessVerify,
 	TransactionsControllers.acceptTransaction
 );
 
 transactionsRouter.post(
-	"/cancel",
+	"/:id/cancel",
 	accessVerify,
 	TransactionsControllers.cancelTransaction
 );

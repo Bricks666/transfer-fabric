@@ -2,12 +2,22 @@ const { Fabric } = require(".");
 const { CONTRACTS, TRANSACTIONS } = require("../configs");
 
 module.exports = class TransactionsServices {
-	static async getTransactions(login, org) {
+	static async getSendedTransactions(login, org) {
 		return await Fabric.transaction(
 			login,
 			org,
 			CONTRACTS.TRANSACTIONS,
-			TRANSACTIONS.TRANSACTIONS.GET_BY_LOGIN,
+			TRANSACTIONS.TRANSACTIONS.GET_SENDED,
+			login
+		);
+	}
+
+	static async getReceivedTransactions(login, org) {
+		return await Fabric.transaction(
+			login,
+			org,
+			CONTRACTS.TRANSACTIONS,
+			TRANSACTIONS.TRANSACTIONS.GET_RECEIVED,
 			login
 		);
 	}

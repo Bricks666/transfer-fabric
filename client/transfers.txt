@@ -1,0 +1,199 @@
+pragma solidity  0.7.0;
+pragma experimental ABIEncoderV2;
+contract Transfer {
+    struct User {
+        address login; //логин - адрес в сети
+        bool user;
+        bool admin;
+        bool on_offer;
+    }
+
+    struct Money_transfer {
+        uint transfer_num;
+       uint time_transaction;
+        address payable owner_address;
+        uint id_category;
+        bytes32 keyword;
+        address payable recipient_address;
+        uint count;
+        bool status;
+        string description;
+    }
+
+    struct Sample {
+        string name_sample;
+        uint id_category;
+        uint count; // сколько денег
+    }
+
+    struct AdminReg {
+        uint id;
+        address admin_request;
+        address[] admin_address;
+        address admin_against;
+        bool finished;
+    }
+
+    address[] user_address;
+    string[] public category;
+    Money_transfer[] public money_transfer;
+    uint public admin_count;
+    Sample[] public sample;
+    AdminReg[] public offer_admin;
+
+    mapping (address => User) public user;
+
+    constructor() {
+        user[0xc97E2f334315eb44ea6a14A51C4Ca83b74888FF6]=User(0xc97E2f334315eb44ea6a14A51C4Ca83b74888FF6,true, true, true);
+        category.push("Personal transfer");
+        category.push("Rent pay");
+        category.push("Personal repayment");
+        sample.push(Sample("present10", 0, 10));
+        sample.push(Sample("present10", 0, 30));
+        sample.push(Sample("present10", 0, 50));
+        sample.push(Sample("rent70", 1, 70));
+        sample.push(Sample("rent90", 1, 90));
+        sample.push(Sample("debtrepayment", 2, 100));
+        admin_count = 1;
+        user_address.push(0xc97E2f334315eb44ea6a14A51C4Ca83b74888FF6);
+    }
+
+    function get_categories() view public returns(string[] memory) {
+        return(category);
+    }
+
+    function get_transfers() view external returns(Money_transfer[] memory) {
+        return money_transfer;
+    }
+
+    function get_samples() view external returns(Sample[] memory) {
+        return sample;
+    }
+
+    function get_user_addresses() view external returns(address[] memory) {
+        return user_address;
+    }
+
+    function get_offers() view external returns(AdminReg[] memory) {
+        return offer_admin;
+    }
+
+
+    function reg_user() public {
+        require(user[msg.sender].login == address(0));
+        user[msg.sender] = User(msg.sender,true, false, false);
+        user_address.push(msg.sender);
+    }
+
+    function login_user() view public {
+        require(user[msg.sender].login != address(0));
+    }
+
+    function transferTo(address payable recipient_address, string memory keyword, string memory description, uint category_id) public payable returns(Money_transfer memory){
+        require(user[recipient_address].user == true, "The user is not registered");
+        require(user[msg.sender].user == true, "You are not a user");
+        require(recipient_address != msg.sender, "Use different address");
+        require(msg.value > 0, "You have not a money");
+        money_transfer.push(Money_transfer(money_transfer.length, 0 ,msg.sender, category_id , keccak256(abi.encodePacked(keyword)), recipient_address, msg.value, false, description));
+        return money_transfer[money_transfer.length - 1];
+    }
+
+    function cancel_transfer(uint transfer_num) public {
+        require(user[msg.sender].user == true, "You are not registered");
+        require(money_transfer[transfer_num].owner_address != address(0), "Please, check transfer_num");
+        require(money_transfer[transfer_num].owner_address == msg.sender, "You are not owner");
+        require(money_transfer[transfer_num].status == false, "The transfer has been already finished");
+        money_transfer[transfer_num].owner_address.transfer(money_transfer[transfer_num].count);
+        money_transfer[transfer_num].status = true;
+    }
+
+    function acc_transfer(uint transfer_num, string memory keyword) public {
+        require(money_transfer[transfer_num].recipient_address == msg.sender, "You are not recipient");
+        require(money_transfer[transfer_num].status == false, "The transfer has been already finished");
+        if (keccak256(abi.encodePacked(keyword)) != money_transfer[transfer_num].keyword) {
+           money_transfer[transfer_num].owner_address.transfer(money_transfer[transfer_num].count);
+        }
+        else {
+            msg.sender.transfer(money_transfer[transfer_num].count);
+        }
+        money_transfer[transfer_num].time_transaction=block.timestamp;
+        money_transfer[transfer_num].status = true;
+    }
+
+    // function use_sample(string memory name_sample, address payable recipient_address, string memory keyword, string memory description, uint payment_comission) public payable{ // payment_comission - кто оплачивает комиссию - 0 - отправитель . 1 - получатель
+    //     require(user[recipient_address].user == true, "The user is not registered");
+    //     require(user[msg.sender].user == true, "You are not a user");
+    //     require(msg.sender.balance > 0, "You have not a money");
+    //     require(recipient_address != msg.sender, "Use different address");
+    //     require(msg.value == sample[name_sample].count, "Check value");
+    //     money_transfer.push(Money_transfer(money_transfer.length, 0 ,msg.sender, sample[name_sample].id_category, keccak256(abi.encodePacked(keyword)), recipient_address, sample[name_sample].count, false, description));
+    //     if (payment_comission == 0) {
+    //         if (sample[name_sample].count >= 10) {
+    //         0xe5f0332CA42459333149b67aF2d0E486D03F8a83.transfer(sample[name_sample].count/100);
+    //         }
+    //         else {
+    //         0xe5f0332CA42459333149b67aF2d0E486D03F8a83.transfer(1);
+    //         }
+    //     }
+    // }
+
+    function add_sample(string memory name_sample, uint id_category, uint count) public {
+        require(user[msg.sender].admin == true, "You are not admin");
+        sample.push(Sample(name_sample, id_category, count));
+    }
+
+    function add_category(string memory name_category) public {
+        require(user[msg.sender].admin == true, "You are not admin");
+        category.push(name_category);
+    }
+
+    modifier CheckVote(uint id_offer) {
+        bool value = false;
+        for (uint i=0; i<offer_admin[id_offer].admin_address.length; i++) {
+            if (offer_admin[id_offer].admin_address[i] == msg.sender) {
+                value=true;
+                break;
+            }
+        }
+        require( value == false, "Is voised");
+    _;}
+
+    function check_offer(uint id_offer) public{
+        if (offer_admin[id_offer].admin_address.length == admin_count) {
+            offer_admin[id_offer].finished = true;
+            user[offer_admin[id_offer].admin_request].admin = true;
+            admin_count+=1;
+        }
+    }
+
+    function add_offer_admin(address address_user) public {
+        require(user[address_user].user == true, "The user is not registered");
+        require(user[msg.sender].admin == true, "You are not admin");
+        require(user[address_user].admin == false, "The user is admin");
+        require(user[address_user].on_offer == false, "The user is on offer");
+
+        address[] memory addressArray;
+        uint offer_id = offer_admin.length;
+        offer_admin.push(AdminReg(offer_id,address_user, addressArray, address(0), false));
+        offer_admin[offer_id].admin_address.push(msg.sender);
+        check_offer(offer_id);
+        user[address_user].on_offer = true;
+    }
+
+    function vote_for(uint id_offer) CheckVote(id_offer) public {
+        require(user[offer_admin[id_offer].admin_request].user == true, "The user is not registered");
+        require(user[msg.sender].admin == true, "You are not admin");
+        require(offer_admin[id_offer].finished == false, "The offer is finished");
+        offer_admin[id_offer].admin_address.push(msg.sender);
+        check_offer(id_offer);
+    }
+
+    function vote_against(uint id_offer) CheckVote(id_offer) public{
+        require(user[msg.sender].admin == true, "You are not admin");
+        require(offer_admin[id_offer].finished == false, "The offer is finished");
+        offer_admin[id_offer].admin_against = msg.sender;
+        offer_admin[id_offer].finished = true;
+        user[offer_admin[id_offer].admin_request].on_offer = false;
+    }
+
+}

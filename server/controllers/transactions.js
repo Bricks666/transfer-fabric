@@ -1,10 +1,24 @@
 const { TransactionsServices, ApiError } = require("../services");
 
 module.exports = class TransactionsControllers {
-	static async getTransactions(req, res, next) {
+	static async getSendedTransactions(req, res, next) {
 		try {
 			const { user } = req.body;
-			const transactions = await TransactionsServices.getTransactions(
+			const transactions = await TransactionsServices.getSendedTransactions(
+				user.login,
+				user.org
+			);
+
+			return res.json({ transactions });
+		} catch (e) {
+			next(e);
+		}
+	}
+
+	static async getReceivedTransactions(req, res, next) {
+		try {
+			const { user } = req.body;
+			const transactions = await TransactionsServices.getReceivedTransactions(
 				user.login,
 				user.org
 			);
@@ -45,18 +59,17 @@ module.exports = class TransactionsControllers {
 
 	static async acceptTransaction(req, res, next) {
 		try {
-			const { user, transactionId, keyword } = req.body;
+			const { user, keyword } = req.body;
+			const { id } = req.params;
 
-			if (transactionId === undefined || !keyword) {
-				throw ApiError.BadRequest(
-					"TransactionId and keyword must be provided "
-				);
+			if (id === undefined || !keyword) {
+				throw ApiError.BadRequest("id and keyword must be provided ");
 			}
 
 			const transaction = await TransactionsServices.acceptTransaction(
 				user.login,
 				user.org,
-				transactionId,
+				id,
 				keyword
 			);
 
@@ -68,14 +81,15 @@ module.exports = class TransactionsControllers {
 
 	static async cancelTransaction(req, res, next) {
 		try {
-			const { user, transactionId } = req.body;
-			if (transactionId === undefined) {
-				throw ApiError.BadRequest("TransactionId must be provided");
+			const { user } = req.body;
+			const { id } = req.params;
+			if (id === undefined) {
+				throw ApiError.BadRequest("id must be provided");
 			}
 			const transaction = await TransactionsServices.cancelTransaction(
 				user.login,
 				user.org,
-				transactionId
+				id
 			);
 
 			return res.json({ transaction });

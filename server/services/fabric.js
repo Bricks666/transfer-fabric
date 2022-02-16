@@ -6,19 +6,20 @@ const { ApiError } = require(".");
 const FabricCAServices = require("fabric-ca-client");
 
 module.exports = class Fabric {
-	static async transaction(login, org, contract, transaction, ...params) {
+	static async transaction(login, org, contractName, transaction, ...params) {
 		const wallet = await this.createWallet(login, org);
 		const gateway = await this.connectGateway(wallet, login, org);
 		const channel = await gateway.getNetwork(CHANNEL);
-		const contract = channel.getContract(CHAINCODE, contract);
+		const contract = channel.getContract(CHAINCODE, contractName);
 		const bufferedResponse = await contract.submitTransaction(
 			transaction,
 			...params
 		);
 
 		gateway.disconnect();
+		console.log(bufferedResponse.toString());
 		const response = fromBuffer(bufferedResponse);
-		if (!Object.keys(response).length) {
+		if (!response) {
 			throw ApiError.BadRequest("Something went wrong in chaincode");
 		}
 		return response;
@@ -61,7 +62,7 @@ module.exports = class Fabric {
 	}
 
 	static async registrationIdentity(org, login, password) {
-		const admin = this.getAdmin(org);
+		const admin = await this.getAdmin(org);
 		const ca = this.createCA(org);
 		await ca.register(
 			{
@@ -97,7 +98,7 @@ module.exports = class Fabric {
 	}
 
 	static createIdentity(org, enrollment) {
-		const mspId = org[0].toUpperCase() + org.slice(1);
+		const mspId = org[0].toUpperCase() + org.slice(1) + "MSP";
 		return {
 			credentials: {
 				certificate: enrollment.certificate,

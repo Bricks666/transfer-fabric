@@ -16,7 +16,7 @@ module.exports = class UsersControllers {
 				login,
 			});
 
-			res.json({ user, accessToken });
+			res.json({ accessToken });
 		} catch (e) {
 			next(e);
 		}
@@ -30,6 +30,30 @@ module.exports = class UsersControllers {
 			}
 			await UsersServices.registration(login, "0000");
 			res.json({ resultCode: 0 });
+		} catch (e) {
+			next(e);
+		}
+	}
+
+	static async getUser(req, res, next) {
+		try {
+			const { user } = req.body;
+
+			const userInfo = await UsersServices.getUser(user.login, user.org);
+
+			return res.json({ user:userInfo });
+		} catch (e) {
+			next(e);
+		}
+	}
+
+	static async getUsers(req, res, next) {
+		try {
+			const { user } = req.body;
+
+			const users = await UsersServices.getUsers(user.login, user.org);
+
+			return res.json({ users });
 		} catch (e) {
 			next(e);
 		}

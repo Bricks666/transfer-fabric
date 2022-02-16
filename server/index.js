@@ -8,7 +8,14 @@ const { Fabric } = require("./services");
 
 const app = express();
 
-app.use(express.json(), cookieParser(), cors());
+app.use(
+	express.json(),
+	cookieParser(),
+	cors({
+		credentials: true,
+		origin: "http://localhost:3000",
+	})
+);
 app.use("/", appRouter);
 app.use(errorHandler);
 
@@ -46,5 +53,11 @@ app.listen(PORT, async () => {
 		CONTRACTS.USERS,
 		TRANSACTIONS.USERS.INIT
 	);
+	await Fabric.registrationIdentity("org1", "Admin1", "0000");
+	await Fabric.registrationIdentity("org1", "Admin2", "0000");
+	await Fabric.registrationIdentity("org1", "User1", "0000");
+	await Fabric.registrationIdentity("org1", "User2", "0000");
+	await Fabric.registrationIdentity("org1", "User3", "0000");
+	await Fabric.registrationIdentity("org1", "User4", "0000");
 	console.log("OK");
 });

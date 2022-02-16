@@ -1,7 +1,7 @@
 const PORT = 5000;
 const COOKIE_NAME = "asddasdf";
 const CHANNEL = "mychannel";
-const CHAINCODE = "transfers";
+const CHAINCODE = "transactions";
 const CONTRACTS = {
 	CATEGORIES: "CategoryContract",
 	SAMPLES: "SamplesContract",
@@ -26,7 +26,8 @@ const TRANSACTIONS = {
 		ADD: "addTransaction" /* sender, receiver, keyword, category, description, money */,
 		ACCEPT: "acceptTransactions" /* sender, id, keyword */,
 		CANCEL: "cancelTransaction" /* sender, id */,
-    GET_BY_LOGIN: "getTransactionsLogin"
+		GET_SENDED: "getSendedTransactions",
+		GET_RECEIVED: "getReceivedTransactions",
 	},
 	USERS: {
 		INIT: "initializationContract",

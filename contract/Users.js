@@ -16,7 +16,7 @@ class UserList {
         const users = JSON.parse(ListUsers.toString());
         users[login] = user;
         const DataUsers = Buffer.from(JSON.stringify(users));
-        await this.ctx.stub.putState(this.KEY, DataUsers);    
+        await this.ctx.stub.putState(this.KEY, DataUsers);
     }
     async getUsers() {
         const ListUsers = await this.ctx.stub.getState(this.KEY);
@@ -33,14 +33,14 @@ class UserList {
         const users = JSON.parse(ListUsers.toString());
         users[login].onOffer = true;
         const DataUsers = Buffer.from(JSON.stringify(users));
-        await this.ctx.stub.putState(this.KEY, DataUsers);  
+        await this.ctx.stub.putState(this.KEY, DataUsers);
     }
     async removeOffer(login) {
         const ListUsers = await this.ctx.stub.getState(this.KEY);
         const users = JSON.parse(ListUsers.toString());
         users[login].onOffer = false;
         const DataUsers = Buffer.from(JSON.stringify(users));
-        await this.ctx.stub.putState(this.KEY, DataUsers); 
+        await this.ctx.stub.putState(this.KEY, DataUsers);
     }
     async addAdmin(login) {
         const ListUsers = await this.ctx.stub.getState(this.KEY);
@@ -72,7 +72,7 @@ class User {
         this.isAdmin = isAdmin;
         this.balance = 1000;
         this.onOffer = onOffer;
-    } 
+    }
 }
 
 class UserCTX extends Context {
@@ -95,6 +95,7 @@ class UsersContract extends Contract {
         users["User3"] = new User(4, "User3", false, false);
         users["User4"] = new User(5, "User4", false, false);
         await ctx.userList.createUsers(users);
+        return users;
     }
     async registration(ctx, login) {
         const users = await ctx.userList.getUsers();
@@ -103,7 +104,7 @@ class UsersContract extends Contract {
         }
         const user = new User(Object.keys(users).length, login, false, false);
         await ctx.userList.addUser(user);
-        return await ctx.userList.getUser(login);
+        return true;
     }
     async getUser(ctx, login) {
         return await ctx.userList.getUser(login);

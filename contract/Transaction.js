@@ -12,7 +12,7 @@ class TransactionList {
 		const DataTransactions = Buffer.from(JSON.stringify(transactions));
 		await this.ctx.stub.putState(this.KEY, DataTransactions);
 	}
-	async addTransactions(transaction) {
+	async addTransaction(transaction) {
 		const TransactionsList = await this.ctx.stub.getState(this.KEY);
 		const transactions = JSON.parse(TransactionsList.toString());
 		transactions.push(transaction);
@@ -29,13 +29,18 @@ class TransactionList {
 		const transactions = JSON.parse(TransactionsList.toString());
 		return transactions[transactionId];
 	}
-	async getTransactionsLogin(login) {
-		const TransactionsList = await this.ctx.stub.getState(this.KEY);
-		const transactions = JSON.parse(TransactionsList.toString());
+	async getSendedTransactions(login) {
+		const bufferedTransactions = await this.ctx.stub.getState(this.KEY);
+		const transactions = JSON.parse(bufferedTransactions.toString());
 		return transactions.filter(
-			(transaction) =>
-				transaction.loginSender === login ||
-				transaction.loginRecipient === login
+			(transaction) => transaction.loginSender === login
+		);
+	}
+	async getReceivedTransactions(login) {
+		const bufferedTransactions = await this.ctx.stub.getState(this.KEY);
+		const transactions = JSON.parse(bufferedTransactions.toString());
+		return transactions.filter(
+			(transaction) => transaction.loginRecipient === login
 		);
 	}
 	async finishTransaction(transactionId) {
@@ -88,6 +93,7 @@ class TransactionsContract extends Contract {
 	async initializationContract(ctx) {
 		const transactions = [];
 		await ctx.transactionList.createTransactions(transactions);
+		return transactions;
 	}
 	async addTransaction(
 		ctx,
@@ -98,10 +104,20 @@ class TransactionsContract extends Contract {
 		description,
 		money
 	) {
+		console.debug(
+			loginSender,
+			loginRecipient,
+			keyword,
+			categoryId,
+			description,
+			money, "PARAMS"
+		);
 		const transactions = await ctx.transactionList.getAllTransactions();
+    console.debug(transactions, "S")
 		const now = new Date().toISOString();
+    console.debug(now, "DATE")
 		const transaction = new Transaction(
-			(transactions.length,
+			transactions.length,
 			loginSender,
 			loginRecipient,
 			keyword,
@@ -109,11 +125,13 @@ class TransactionsContract extends Contract {
 			description,
 			money,
 			now,
-			0)
+			0
 		);
-		await ctx.transactionList.addTransaction(transaction, loginSender);
+    console.debug(transaction, "ONE")
+		await ctx.transactionList.addTransaction(transaction);
+    console.debug(transaction, "TWO")
 		await ctx.userList.sendMoney(loginSender, money);
-		return await ctx.transactionList.getTransaction(transactions.length);
+    console.debug(transaction, "END")
 	}
 	async acceptTransactions(ctx, login, transactionId, keyword) {
 		const transactions = await ctx.transactionList.getAllTransactions();
@@ -148,6 +166,7 @@ class TransactionsContract extends Contract {
 			}
 		}
 		await ctx.transactionList.finishTransaction(transactionId);
+		return transactions[transactionId];
 	}
 	async cancelTransaction(ctx, login, transactionId) {
 		const transactions = await ctx.transactionList.getAllTransactions();
@@ -159,10 +178,13 @@ class TransactionsContract extends Contract {
 		}
 		await ctx.transactionList.finishTransaction(transactionId);
 		await ctx.userList.recieveMoney(login, transactions[transactionId].money);
-		return await ctx.transactionList.getTransaction(transactionId);
+		return transactions[transactionId];
 	}
-	async getTransactionsLogin(ctx, login) {
-		return await ctx.transactionList.getTransactionsLogin(login);
+	async getSendedTransactions(ctx, login) {
+		return await ctx.transactionList.getSendedTransactions(login);
+	}
+	async getReceivedTransactions(ctx, login) {
+		return await ctx.transactionList.getReceivedTransactions(login);
 	}
 }
 
